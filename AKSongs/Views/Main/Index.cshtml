@@ -1,0 +1,114 @@
+﻿@using System.Web.Optimization
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html manifest="cachemanifest">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scaleable=no, maximum-scale=1.0" />
+    <title>AKs sångbok</title>
+
+    <link href="~/Content/style.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i["GoogleAnalyticsObject"] = r; i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date(); a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        })(window, document, "script", "//www.google-analytics.com/analytics.js", "ga");
+
+        ga("create", "UA-27394459-2", "auto");
+        ga('require', 'ec');
+    </script>
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-bind="click: toggle(menuVisible)">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <form class="" role="search">
+                    <input type="text" class="form-control" placeholder="Sök" data-bind="textInput: search">
+                </form>
+            </div>
+            <div class="navbar-collapse" data-bind="visible: menuVisible()" style="display: none">
+                <div class="nav">
+                    <!-- ko if: selectedSong() !== null -->
+                    <a data-bind="click: selectMode('alphabetic')" href="#">A-Ö</a>
+                    @*<a data-bind="css: { active: mode() === 'categories' }, click: selectMode('categories')" href="#">Kategorier</a>*@
+                    <div class="divider"></div>
+                    <a data-bind="click: modifyFontSize(1)" href="#">Större text</a>
+                    <a data-bind="click: modifyFontSize(-1)" href="#">Mindre text</a>
+                    <!-- ko if: password() !== null -->
+                    <div class="divider"></div>
+                    <a data-bind="click: edit" href="#">Editera</a>
+                    <div class="divider"></div>
+                    <a data-bind="click: publishSong" href="#">Publicera som aktiv sång</a>
+                    <!-- /ko -->
+                    <!-- /ko -->
+                    <!-- ko if: selectedSong() === null && password() !== null -->
+                    <div class="divider"></div>
+                    <a data-bind="click: addSong" href="#">Lägg till sång</a>
+                    <!-- /ko -->
+                    <!-- ko if: password() === null -->
+                    <div class="divider"></div>
+                    <a data-bind="click: admin" href="#">Admin</a>
+                    <!-- /ko -->
+                </div>
+            </div>
+
+        </div>
+    </nav>
+    <div style="height: 65px"></div>
+    <div style="display: none" data-bind="visible: true">
+        <div class="list-group" data-bind="foreach: filteredSongs, visible: selectedSong() === null && editSong() === null">
+            <a class="list-group-item" data-bind="click: select, attr: { href: id }, css: { active: $root.activeSong() === id }">
+                <span class="title" data-bind="text: name"></span>
+                <!-- ko if: category -->
+                <span class="category" data-bind="text: category"></span>
+                <!-- /ko -->
+            </a>
+        </div>
+        <!-- ko if: selectedSong() !== null && editSong() === null -->
+        <div class="container song-details" data-bind="">
+            <h3 class="song-title" data-bind="text: selectedSong().name"></h3>
+            <span data-bind="visible: selectedSong().melody, text: 'Melodi: ' + selectedSong().melody"></span>
+            <span data-bind="visible: selectedSong().author, text: 'Författare: ' + selectedSong().author"></span>
+            <span data-bind="visible: selectedSong().year, text: 'År: ' + selectedSong().year"></span>
+        </div>
+        <pre data-bind="text: selectedSong().lyrics, style: { 'font-size': fontSize() }"></pre>
+        <div class="date-modified" data-bind="text: 'Senast ändrad ' + formatDate(selectedSong().modified)"></div>
+        <!-- /ko -->
+        <!-- ko if: editSong() !== null -->
+        <div class="container edit-song-details" data-bind="">
+            <input class="edit-name" data-bind="value: editSong().name" type="text" />
+            <label><span class="input-label-text">Melodi: </span><input data-bind="value: editSong().melody" type="text" /></label>
+            <label><span class="input-label-text">Författare: </span><input data-bind="value: editSong().author" type="text" /></label>
+            <label><span class="input-label-text">År: </span><input data-bind="value: editSong().year" type="number" inputmode="numeric" /></label>
+        </div>
+        <textarea class="edit-lyrics" data-bind="value: editSong().lyrics"></textarea>
+        <button data-bind="click: cancelEdit">Avbryt</button>
+        <button data-bind="click: saveEdit">Spara</button>
+        <!-- ko if: selectedSong() !== null -->
+        <br />
+        <br />
+        <button data-bind="click: deleteSong">Ta bort</button>
+        <!-- /ko -->
+        <!-- /ko -->
+    </div>
+    <img class="bottom-logo" src="~/Content/cherub.png" />
+    <!-- ko if: notification() !== null && songs() !== null && time() - notification().created < 600 -->
+    <div class="notification" style="display: none" data-bind="visible: true, click: selectNotificationSong">
+        <h3>Nu sjunger vi: <span data-bind="text: songs()[notification().song].name"></span></h3>
+        <span data-bind="text: ((time() - notification().created)/60 | 0) + ' minuter sen'"></span>
+    </div>
+    <!-- /ko -->
+    @Scripts.Render("~/Scripts/bundle")
+    <script src="~/signalr/hubs"></script>
+</body>
+</html>
