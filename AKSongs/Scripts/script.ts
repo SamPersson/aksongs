@@ -205,6 +205,8 @@ class ViewModel {
       this.menuVisible(false);
       this.selectedSong(null);
       this.editSong(null);
+      window.history.pushState(null, "", "/");
+      ga("send", { hitType: "pageview", page: "/" });
     }
   }
 

@@ -23,7 +23,7 @@ namespace AKSongs.Controllers
         [OutputCache(NoStore = true, Duration = 0, VaryByParam = "None")]
         public ActionResult Manifest()
         {
-          var manifestResult = new ManifestResult("000000008 " + db.Songs.OrderByDescending(s => s.Modified).Select(s => s.Modified).First())
+          var manifestResult = new ManifestResult("000000009 " + db.Songs.OrderByDescending(s => s.Modified).Select(s => s.Modified).First())
           {
             CacheResources = new [] { 
               "Content/style.css",
