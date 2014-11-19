@@ -28,7 +28,7 @@ namespace AKSongs.Controllers
             CacheResources = new [] { 
               "Content/style.css",
               "Content/cherub.png",
-              "Scripts/script.js",
+              "Scripts/scripts.js",
               "Scripts/lodash.js",
               "Scripts/lunr.js",
               "Scripts/knockout-3.2.0.js",

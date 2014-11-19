@@ -16,6 +16,7 @@ function slug(s:string) {
     .replace(/-+$/, ""); // Trim - from end of text
 }
 
+
 function formatDate(d: Date) {
   var curr_year = d.getFullYear();
   var curr_month = (d.getMonth() + 1).toString(); //Months are zero based
