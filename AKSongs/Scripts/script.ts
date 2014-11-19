@@ -267,7 +267,7 @@ class ViewModel {
   }
 
   addSong() {
-    this.editSong({ name: ko.observable(""), lyrics: ko.observable("") });
+    this.editSong({ name: ko.observable(""), lyrics: ko.observable(""), melody: ko.observable(null), author: ko.observable(null), year: ko.observable(null) });
     this.menuVisible(false);
   }
 
@@ -335,6 +335,13 @@ class ViewModel {
     this.songs()[this.notification().song].select();
     this.notification(null);
   }
+}
+
+function drunkMode() {
+  setInterval(() => {
+    var d = Math.sin(Date.now() * 0.001);
+    document.body.style.transform = "rotate(" + d + "deg)";
+  }, 16);
 }
 
 var viewModel = new ViewModel();
