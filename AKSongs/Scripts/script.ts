@@ -2,6 +2,14 @@
 ///<reference path="typings/lodash/lodash.d.ts"/>
 ///<reference path="lunrSwe.ts"/>
 
+interface KnockoutUtils {
+  canSetPrototype;
+  setPrototypeOfOrExtend;
+}
+
+ko.utils.canSetPrototype = false;
+ko.utils.setPrototypeOfOrExtend = ko.utils.extend;
+
 declare function ga(field: string, ...parameters: any[]) : void;
 
 function slug(s:string) {
@@ -16,6 +24,44 @@ function slug(s:string) {
     .replace(/-+$/, ""); // Trim - from end of text
 }
 
+function request(
+    method: string,
+    url: string,
+    data: any,
+    onSuccess: (data: string) => void,
+    onError: (error: any) => void = undefined) {
+  var r = new XMLHttpRequest();
+  r.open(method, url, true);
+
+  var password = localStorage.getItem("password");
+  if (password) {
+    r.setRequestHeader("Authorization", "SECRET " + password);
+  }
+  r.setRequestHeader("Accept", "application/json");
+  r.setRequestHeader("Content-Type", "application/json");
+
+  r.onload = () => {
+    if (r.status >= 200 && r.status < 400) {
+      onSuccess(r.responseText);
+    } else if(onError) {
+      onError(r);
+    }
+  }
+
+  if (onError) {
+    r.onerror = () => {
+      onError(r);
+    }
+  }
+
+  if (data !== undefined && data !== null) {
+    r.send(JSON.stringify(data));
+  } else {
+    r.send();
+  }
+
+  return r;
+}
 
 function formatDate(d: Date) {
   var curr_year = d.getFullYear();
@@ -104,7 +150,7 @@ class ViewModel {
 
   currentPageTitle = ko.computed(() => {
     var selectedSong = this.selectedSong();
-    return "AKs sångbok" + (selectedSong !== null ? " - " + selectedSong.name : "");
+    return "AKs sångbok" + (selectedSong ? " - " + selectedSong.name : "");
   }, this);
 
   constructor() {
@@ -146,6 +192,9 @@ class ViewModel {
     setInterval(() => {
       this.time(Date.now() / 1000 | 0);
     }, 1000);
+
+    var password = localStorage.getItem("password");
+    request("POST", "/test", { password: password }, () => this.password(password));
   }
 
   mode = ko.observable("alphabetic");
@@ -193,7 +242,8 @@ class ViewModel {
   editSong = ko.observable(null);
 
   edit() {
-    $.get("/api/songs/" + this.selectedSong().id, song => {
+    request("GET", "/api/songs/" + this.selectedSong().id, null, data => {
+      var song = JSON.parse(data);
       var editSong = {
         id: song.id,
         name: ko.observable(song.name),
@@ -238,42 +288,24 @@ class ViewModel {
       return;
     }
 
+    var onSuccess = () => {
+      this.editSong(null);
+      reloadSongs();
+    }
+
     if (song.id !== undefined) {
-      $.ajax("/api/songs/" + song.id, {
-        type: "PUT",
-        contentType: "application/json",
-        data: JSON.stringify(song),
-        headers: { Authorization: "SECRET " + this.password() },
-        success: data => {
-          this.editSong(null);
-          reloadSongs();
-        }
-      });
+      request("PUT", "/api/songs/" + song.id, song, onSuccess);
     } else {
-      $.ajax("/api/songs", {
-        type: "POST",
-        contentType: "application/json",
-        data: JSON.stringify(song),
-        headers: { Authorization: "SECRET " + this.password() },
-        success: data => {
-          this.editSong(null);
-          reloadSongs();
-        }
-      });
+      request("POST", "/api/songs", song, onSuccess);
     }
   }
 
   deleteSong() {
     if (confirm("Säkert att du vill ta bort '" + this.selectedSong().name + "'?")) {
-      $.ajax("/api/songs/" + this.selectedSong().id, {
-        type: "DELETE",
-        contentType: "application/json",
-        headers: { Authorization: "SECRET " + this.password() },
-        success: data => {
-          this.editSong(null);
-          this.selectedSong(null);
-          reloadSongs();
-        }
+      request("DELETE", "/api/songs/" + this.selectedSong().id, null, () => {
+        this.editSong(null);
+        this.selectedSong(null);
+        reloadSongs();
       });
     }
   }
@@ -281,27 +313,17 @@ class ViewModel {
   password = ko.observable(null);
 
   admin() {
-    var password = prompt("Lösenord?");
-    $.ajax("/test", {
-      type: "POST",
-      data: { password: password },
-      success: data => {
-        this.password(password);
-      }
+    var password = prompt("Lösenord");
+    request("POST", "/test", { password: password }, () => {
+      this.password(password);
+      localStorage.setItem("password", password);
     });
   }
 
   publishSong() {
     if (confirm("Är du säker på att du vill publicera " + this.selectedSong().name + " nu?")) {
-      $.ajax("/api/notifications", {
-        type: "POST",
-        contentType: "application/json",
-        data: JSON.stringify({ songId: this.selectedSong().id }),
-        headers: { Authorization: "SECRET " + this.password() },
-        success: data => {
-          this.menuVisible(false);
-        }
-      });
+      request("POST", "/api/notifications", { songId: this.selectedSong().id },
+        () => this.menuVisible(false));
     }
   }
 
@@ -318,13 +340,12 @@ ko.applyBindings(viewModel);
 
 function loadSongs() {
 
-  $.get("/api/songs", data => {
-
-    viewModel.loadSongs(data);
+  request("GET", "/api/songs", null, data => {
+    viewModel.loadSongs(JSON.parse(data));
 
     resolveUrl();
 
-    window.onpopstate = event => {
+    window.onpopstate = () => {
       resolveUrl();
       if (window.history.state) {
         viewModel.activeSong(window.history.state.active);
@@ -335,9 +356,10 @@ function loadSongs() {
     }
   });
 
-  $.get("/api/notifications", data => {
-    if (data && data.length > 0) {
-      var notification = data[0];
+  request("GET", "/api/notifications", null, data => {
+    var notifications = JSON.parse(data);
+    if (notifications && notifications.length > 0) {
+      var notification = notifications[0];
       notification.created = viewModel.time() - notification.age;
       viewModel.notification(notification);
     }
@@ -404,7 +426,7 @@ function reloadSongs() {
 }
 
 window.applicationCache.addEventListener("error", e => {
-  console.log(e);
+  console.log("applicationCache error", e);
 });
 
 window.applicationCache.addEventListener("updateready", () => {

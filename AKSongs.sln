@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AKSongs", "AKSongs\AKSongs.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{ADCC897A-9FA6-476E-871E-934CB51AA4C7}"
 	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
 		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
 EndProject
