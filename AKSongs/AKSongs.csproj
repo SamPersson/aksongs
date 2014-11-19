@@ -165,6 +165,24 @@
     <Content Include="Content\style.min.css">
       <DependentUpon>style.css</DependentUpon>
     </Content>
+    <Content Include="favicons\browserconfig.xml" />
+    <Content Include="favicons\favicon-114.png" />
+    <Content Include="favicons\favicon-120.png" />
+    <Content Include="favicons\favicon-144.png" />
+    <Content Include="favicons\favicon-150.png" />
+    <Content Include="favicons\favicon-152.png" />
+    <Content Include="favicons\favicon-16.png" />
+    <Content Include="favicons\favicon-160.png" />
+    <Content Include="favicons\favicon-196.png" />
+    <Content Include="favicons\favicon-310.png" />
+    <Content Include="favicons\favicon-32.png" />
+    <Content Include="favicons\favicon-57.png" />
+    <Content Include="favicons\favicon-64.png" />
+    <Content Include="favicons\favicon-70.png" />
+    <Content Include="favicons\favicon-72.png" />
+    <Content Include="favicons\favicon-76.png" />
+    <Content Include="favicons\favicon-96.png" />
+    <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <None Include="Properties\PublishProfiles\aksongs.pubxml" />
     <None Include="Scripts\jquery-2.1.1.intellisense.js" />

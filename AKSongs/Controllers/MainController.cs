@@ -33,7 +33,10 @@ namespace AKSongs.Controllers
               "Scripts/lunr.js",
               "Scripts/knockout-3.2.0.js",
               "Scripts/jquery-2.1.1.js",
+              "Scripts/jquery.signalR-2.1.2.js",
+              "signalr/hubs",
               "api/songs",
+              "favicon.ico",
             },
             NetworkResources = new [] { "*" },
             FallbackResources = new Dictionary<string, string> { { "/", "/" } }
