@@ -1,87 +1,7 @@
 ﻿///<reference path="typings/knockout/knockout.d.ts"/>
 ///<reference path="typings/lodash/lodash.d.ts"/>
 ///<reference path="lunrSwe.ts"/>
-
-interface KnockoutUtils {
-  canSetPrototype;
-  setPrototypeOfOrExtend;
-}
-
-ko.utils.canSetPrototype = false;
-ko.utils.setPrototypeOfOrExtend = ko.utils.extend;
-
-declare function ga(field: string, ...parameters: any[]) : void;
-
-function slug(s:string) {
-  return s.toLowerCase()
-    .replace(/\s+/g, "-") // Replace spaces with -
-    .replace(/å/g, "a")
-    .replace(/ä/g, "a")
-    .replace(/ö/g, "o")
-    .replace(/[^a-z\-]+/g, "") // Remove all non-word chars
-    .replace(/\-\-+/g, "-") // Replace multiple - with single -
-    .replace(/^-+/, "") // Trim - from start of text
-    .replace(/-+$/, ""); // Trim - from end of text
-}
-
-function request(
-    method: string,
-    url: string,
-    data: any,
-    onSuccess: (data: string) => void,
-    onError: (error: any) => void = undefined) {
-  var r = new XMLHttpRequest();
-  r.open(method, url, true);
-
-  var password = localStorage.getItem("password");
-  if (password) {
-    r.setRequestHeader("Authorization", "SECRET " + password);
-  }
-  r.setRequestHeader("Accept", "application/json");
-  r.setRequestHeader("Content-Type", "application/json");
-
-  r.onload = () => {
-    if (r.status >= 200 && r.status < 400) {
-      onSuccess(r.responseText);
-    } else if(onError) {
-      onError(r);
-    }
-  }
-
-  if (onError) {
-    r.onerror = () => {
-      onError(r);
-    }
-  }
-
-  if (data !== undefined && data !== null) {
-    r.send(JSON.stringify(data));
-  } else {
-    r.send();
-  }
-
-  return r;
-}
-
-function formatDate(d: Date) {
-  var curr_year = d.getFullYear();
-  var curr_month = (d.getMonth() + 1).toString(); //Months are zero based
-  if (curr_month.length < 2) curr_month = "0" + curr_month;
-  var curr_date = d.getDate().toString();
-  if (curr_date.length < 2) curr_date = "0" + curr_date;
-  var curr_hour = d.getHours().toString();
-  if (curr_hour.length < 2) curr_hour = "0" + curr_hour;
-  var curr_min = d.getMinutes().toString();
-  if (curr_min.length < 2) curr_min = "0" + curr_min;
-  var curr_sec = d.getSeconds().toString();
-  if (curr_sec.length < 2) curr_sec = "0" + curr_sec;
-
-  return curr_year + "-" + curr_month + "-" + curr_date + " " + curr_hour + ":" + curr_min + ":" + curr_sec;
-}
-
-interface KnockoutSubscribable<T> extends KnockoutSubscribableFunctions<T> {
-  limit(c : Function);
-}
+///<reference path="util.ts"/>
 
 class Song {
   constructor(data) {
@@ -115,6 +35,10 @@ class Song {
 
     window.scrollTo(0, 0);
 
+    if (viewModel.drunkModeEnabled) {
+      drunkMode.start();
+    }
+
     ga("ec:addProduct", { id: this.id, name: this.name, price: "10.00", quantity: 1 });
     ga("ec:setAction", "detail");
     ga("send", { hitType: "pageview", page: "/" + this.id });
@@ -130,6 +54,8 @@ class ViewModel {
   time = ko.observable(Date.now() / 1000 | 0);
 
   resolvingUrl: boolean = false;
+
+  drunkModeEnabled = false;
 
   loadSongs(data : any[]) {
     this.songs(
@@ -337,11 +263,32 @@ class ViewModel {
   }
 }
 
-function drunkMode() {
-  setInterval(() => {
-    var d = Math.sin(Date.now() * 0.001);
-    document.body.style.transform = "rotate(" + d + "deg)";
-  }, 16);
+module drunkMode {
+  var interval;
+  export function start() {
+    var t = Date.now();
+    if (interval !== undefined) {
+      clearInterval(interval);
+    }
+    interval = setInterval(() => {
+
+      var dt = Date.now() - t;
+      var d = Math.sin(dt * 0.0001);
+      var transform = "rotate(" + d + "deg)";
+      var filter = "";
+      if (dt * 0.0003 > Math.PI * 2) {
+        d = 1 - Math.abs(Math.cos(dt * 0.0003));
+        filter = "blur(" + d + "px)";
+      }
+
+      _.each(<NodeListOf<HTMLElement>>document.querySelectorAll("pre, div.container"), elem => {
+        elem.style.webkitTransform = transform;
+        elem.style.transform = transform;
+        elem.style.webkitFilter = filter;
+        elem.style.filter = filter;
+      });
+    }, 16);
+  }
 }
 
 var viewModel = new ViewModel();
@@ -382,23 +329,6 @@ document.addEventListener("click", event => {
     viewModel.menuVisible(false);
   }
 }, false);
-
-function startsWith(s : string, searchString : string) {
-  return s.lastIndexOf(searchString, 0) === 0;
-}
-
-function getLocation(href : string) {
-  var match = href.match(/^(https?\:)\/\/(([^:\/?#]*)(?:\:([0-9]+))?)(\/[^?#]*)(\?[^#]*|)(#.*|)$/);
-    return match && {
-    protocol: match[1],
-    host: match[2],
-    hostname: match[3],
-    port: match[4],
-    pathname: match[5],
-    search: match[6],
-    hash: match[7]
-  }
-}
 
 function resolveUrl() {
   viewModel.resolvingUrl = true;
@@ -452,15 +382,15 @@ if (window.applicationCache.status === window.applicationCache.UPDATEREADY) {
   window.location.reload();
 }
 
-interface JQueryStatic {
-  connection;
-}
-
 $(() => {
 
   $.connection.notificationHub.client.notifyCurrentSong = notification => {
     notification.created = viewModel.time();
     viewModel.notification(notification);
+  }
+
+  $.connection.notificationHub.client.drunkMode = enabled => {
+    viewModel.drunkModeEnabled = enabled;
   }
 
   $.connection.hub.start();

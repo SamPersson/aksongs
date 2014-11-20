@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Net;
 using System.Web.Mvc;
 using System.Web.UI;
 
 using AKSongs.Models;
+
+using Microsoft.AspNet.SignalR;
 
 namespace AKSongs.Controllers
 {
@@ -23,7 +26,7 @@ namespace AKSongs.Controllers
         [OutputCache(NoStore = true, Duration = 0, VaryByParam = "None")]
         public ActionResult Manifest()
         {
-          var manifestResult = new ManifestResult("000000013 " + db.Songs.OrderByDescending(s => s.Modified).Select(s => s.Modified).First())
+          var manifestResult = new ManifestResult("000000024 " + db.Songs.OrderByDescending(s => s.Modified).Select(s => s.Modified).First())
           {
             CacheResources = new [] { 
               "Content/style.css",
@@ -53,7 +56,15 @@ namespace AKSongs.Controllers
           {
             return HttpNotFound();
           }
-          return Content("ok");
+          return new HttpStatusCodeResult(HttpStatusCode.OK);
+        }
+
+        [Route("drunkmode")]
+        public ActionResult Drunkmode(bool on = true)
+        {
+            GlobalHost.ConnectionManager.GetHubContext<NotificationHub>()
+                .Clients.All.drunkMode(on);
+            return new HttpStatusCodeResult(HttpStatusCode.OK);
         }
     }
 }
