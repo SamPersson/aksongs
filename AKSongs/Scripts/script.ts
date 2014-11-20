@@ -120,7 +120,9 @@ class ViewModel {
     }, 1000);
 
     var password = localStorage.getItem("password");
-    request("POST", "/test", { password: password }, () => this.password(password));
+    if(password != null) {
+      request("POST", "/test", { password: password }, () => this.password(password));
+    }
   }
 
   mode = ko.observable("alphabetic");
