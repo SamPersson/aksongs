@@ -12,6 +12,7 @@ using Microsoft.AspNet.SignalR;
 
 namespace AKSongs.Controllers
 {
+    [System.Web.Mvc.RequireHttps]
     public class MainController : Controller
     {
         private Context db = new Context();
@@ -26,7 +27,7 @@ namespace AKSongs.Controllers
         [OutputCache(NoStore = true, Duration = 0, VaryByParam = "None")]
         public ActionResult Manifest()
         {
-          var manifestResult = new ManifestResult("000000024 " + db.Songs.OrderByDescending(s => s.Modified).Select(s => s.Modified).First())
+          var manifestResult = new ManifestResult("000000026 " + db.Songs.OrderByDescending(s => s.Modified).Select(s => s.Modified).First())
           {
             CacheResources = new [] { 
               "Content/style.css",

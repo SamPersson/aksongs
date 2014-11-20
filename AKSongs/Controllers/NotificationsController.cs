@@ -17,6 +17,7 @@ using Microsoft.AspNet.SignalR;
 
 namespace AKSongs.Controllers
 {
+    [RequireHttps]
     public class NotificationsController : ApiController
     {
         private Context db = new Context();

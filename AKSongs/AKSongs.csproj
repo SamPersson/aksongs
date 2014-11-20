@@ -16,10 +16,10 @@
     <AssemblyName>AKSongs</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <UseIISExpress>true</UseIISExpress>
-    <IISExpressSSLPort />
-    <IISExpressAnonymousAuthentication />
-    <IISExpressWindowsAuthentication />
-    <IISExpressUseClassicPipelineMode />
+    <IISExpressSSLPort>44300</IISExpressSSLPort>
+    <IISExpressAnonymousAuthentication>enabled</IISExpressAnonymousAuthentication>
+    <IISExpressWindowsAuthentication>disabled</IISExpressWindowsAuthentication>
+    <IISExpressUseClassicPipelineMode>false</IISExpressUseClassicPipelineMode>
     <TypeScriptToolsVersion>1.0</TypeScriptToolsVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -218,6 +218,7 @@
     <Compile Include="Controllers\MainController.cs" />
     <Compile Include="Controllers\NotificationHub.cs" />
     <Compile Include="Controllers\NotificationsController.cs" />
+    <Compile Include="Filters\RequireHttpsAttribute.cs" />
     <Compile Include="Filters\SecretKeyAuthorizationAttribute.cs" />
     <Compile Include="Filters\ManifestResult.cs" />
     <Compile Include="Controllers\SongsController.cs" />

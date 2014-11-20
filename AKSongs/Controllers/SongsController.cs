@@ -5,7 +5,6 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web.Http;
@@ -14,12 +13,11 @@ using System.Web.Http.Description;
 using AKSongs.Filters;
 using AKSongs.Models;
 
-using Microsoft.AspNet.SignalR;
-
 using WebApi.OutputCache.V2;
 
 namespace AKSongs.Controllers
 {
+    [RequireHttps]
     public class SongsController : ApiController
     {
         private Context db = new Context();
