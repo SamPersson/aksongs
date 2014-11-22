@@ -62,7 +62,7 @@ class ViewModel {
       _.indexBy(
         _(data)
           .map(songData => new Song(songData))
-          .sortBy(song => song.Name)
+          .sortBy(song => song.name)
         .value(),
         "id"));
 
@@ -197,6 +197,7 @@ class ViewModel {
   addSong() {
     this.editSong({ name: ko.observable(""), lyrics: ko.observable(""), melody: ko.observable(null), author: ko.observable(null), year: ko.observable(null) });
     this.menuVisible(false);
+    window.scrollTo(0, 0);
   }
 
   cancelEdit() {

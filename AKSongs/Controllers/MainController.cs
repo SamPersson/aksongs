@@ -29,7 +29,7 @@ namespace AKSongs.Controllers
             if (!Request.IsSecureConnection)
                 return new HttpStatusCodeResult(HttpStatusCode.NotFound);
 
-            var manifestResult = new ManifestResult("000000027 " + db.Songs.OrderByDescending(s => s.Modified).Select(s => s.Modified).First())
+            var manifestResult = new ManifestResult("000000029 " + db.Songs.OrderByDescending(s => s.Modified).Select(s => s.Modified).First())
             {
                 CacheResources = new[] { 
                   "Content/style.css",
