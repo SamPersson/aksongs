@@ -1,5 +1,4 @@
-#AKSongs
-###Alte Kamererens sångbok
+#Alte Kamererens sångbok
 
 The new digital song book for the student orchestra Alte Kamereren (http://www.altekamereren.org).
 
