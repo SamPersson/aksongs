@@ -1,10 +1,13 @@
 ﻿///<reference path="typings/knockout/knockout.d.ts"/>
+///<reference path="typings/knockout.es5/knockout.es5.d.ts"/>
 ///<reference path="typings/lodash/lodash.d.ts"/>
+///<reference path="typings/jquery/jquery.d.ts"/>
 ///<reference path="lunrSwe.ts"/>
 ///<reference path="util.ts"/>
+///<reference path="TypeLite.Net4.d.ts"/>
 
 class Song {
-  constructor(data) {
+  constructor(data : AKSongs.Models.Song) {
     this.id = data.id;
     this.name = data.name;
     this.lyrics = data.lyrics;
@@ -27,10 +30,10 @@ class Song {
     var location = getLocation(window.location.href);
     window.history.replaceState(
       { active: this.id, scroll: window.pageYOffset },
-      viewModel.currentPageTitle(),
+      viewModel.currentPageTitle,
       location.pathname + location.search);
 
-    viewModel.selectedSong(this);
+    viewModel.selectedSong = this;
     window.history.pushState({ song: this.id }, this.name, this.id);
 
     window.scrollTo(0, 0);
@@ -46,44 +49,43 @@ class Song {
 }
 
 class ViewModel {
-  songs : KnockoutObservable<_.Dictionary<Song>> = ko.observable(null);
-  selectedSong = ko.observable(null);
-  search = ko.observable("");
+  songs : _.Dictionary<Song> = null;
+  selectedSong:Song = null;
+  search = "";
   idx: any;
-  activeSong = ko.observable(null);
-  time = ko.observable(Date.now() / 1000 | 0);
+  activeSong:string = null;
+  time = (Date.now() / 1000) | 0;
 
   resolvingUrl: boolean = false;
 
   drunkModeEnabled = false;
 
   loadSongs(data : any[]) {
-    this.songs(
+    this.songs = 
       _.indexBy(
         _(data)
           .map(songData => new Song(songData))
           .sortBy(song => song.name)
         .value(),
-        "id"));
+        "id");
 
     this.idx = LunrSwe.create(idx => {
       idx.field("name", { boost: 10 });
       idx.field("lyrics");
       idx.ref("id");
     });
-    _.forEach(this.songs(), song => this.idx.add(song));
+    _.forEach(this.songs, song => this.idx.add(song));
   }
 
-  currentPageTitle = ko.computed(() => {
-    var selectedSong = this.selectedSong();
-    return "AKs sångbok" + (selectedSong ? " - " + selectedSong.name : "");
-  }, this);
+  currentPageTitle : string;
 
   constructor() {
-    this.search.subscribe(() => {
+    ko.track(this);
+
+    ko.getObservable(this, "search").subscribe(() => {
       if (!this.resolvingUrl) {
-        this.selectedSong(null);
-        var search = this.search();
+        this.selectedSong = null;
+        var search = this.search;
         if (window.history.state !== null && window.history.state.search !== undefined) {
           window.history.replaceState({ search: search }, search, "/?q=" + search);
         } else {
@@ -93,7 +95,7 @@ class ViewModel {
       }
     });
 
-    this.search.limit(callback => {
+    ko.getObservable(this, "search").limit(callback => {
       var timeoutInstance;
       return () => {
         if (timeoutInstance !== undefined) {
@@ -111,53 +113,52 @@ class ViewModel {
       };
     });
 
-    this.currentPageTitle.subscribe(value => {
-      document.title = value;
+    ko.defineProperty(this, "currentPageTitle", () => {
+      var selectedSong = this.selectedSong;
+      return document.title = "AKs sångbok" + (selectedSong ? " - " + selectedSong.name : "");
     });
 
     setInterval(() => {
-      this.time(Date.now() / 1000 | 0);
+      this.time = (Date.now() / 1000) | 0;
     }, 1000);
 
     var password = localStorage.getItem("password");
     if(password != null) {
-      request("POST", "/test", { password: password }, () => this.password(password));
+      request("POST", "/test", { password: password }, () => this.password = password);
     }
   }
 
-  mode = ko.observable("alphabetic");
+  mode = "alphabetic";
 
   selectMode(mode) {
     return () => {
-      this.mode(mode);
-      this.menuVisible(false);
-      this.selectedSong(null);
-      this.editSong(null);
+      this.mode = mode;
+      this.menuVisible = false;
+      this.selectedSong = null;
+      this.editSong = null;
       window.history.pushState(null, "", "/");
       ga("send", { hitType: "pageview", page: "/" });
     }
   }
 
-  toggle(observable: KnockoutObservable<boolean>) {
-    return () => {
-      observable(!observable());
-    }
+  toggleMenuVisible() {
+    this.menuVisible = !this.menuVisible;
   }
 
-  fontSize = ko.observable("14pt");
+  fontSize = "14pt";
 
   modifyFontSize(ds: number) {
     return () => {
-      var size = parseInt(this.fontSize().substring(0, this.fontSize().length - 2));
-      this.fontSize((size + ds) + "pt");
+      var size = parseInt(this.fontSize.substring(0, this.fontSize.length - 2));
+      this.fontSize = (size + ds) + "pt";
     }
   }
 
-  menuVisible = ko.observable(false);
+  menuVisible = false;
 
   filteredSongs = ko.pureComputed(() => {
-    var query = this.search();
-    var songs = this.songs();
+    var query = this.search;
+    var songs = this.songs;
 
     if (songs === null) return [];
     if (query === "") return _.map(songs, s => s);
@@ -169,50 +170,45 @@ class ViewModel {
     return _.filter(songs, s => s.name.toUpperCase().indexOf(query.toUpperCase()) === 0);
   });
 
-  editSong = ko.observable(null);
+  editSong:AKSongs.Models.Song = null;
 
   edit() {
-    request("GET", "/api/songs/" + this.selectedSong().id, null, data => {
-      var song = JSON.parse(data);
-      var editSong = {
-        id: song.id,
-        name: ko.observable(song.name),
-        lyrics: ko.observable(song.lyrics),
-        melody: ko.observable(song.melody),
-        author: ko.observable(song.author),
-        year: ko.observable(song.year)
-      };
-      this.editSong(editSong);
-      this.menuVisible(false);
+    request("GET", "/api/songs/" + this.selectedSong.id, null, data => {
+      var editSong = JSON.parse(data);
+      ko.track(editSong);
+      this.editSong = editSong;
+      this.menuVisible = false;
     });
 
-    ga("ec:addProduct", { id: this.selectedSong().id, name: this.selectedSong().name, price: "10.00", quantity: 1 });
+    ga("ec:addProduct", { id: this.selectedSong.id, name: this.selectedSong.name, price: "10.00", quantity: 1 });
     ga("ec:setAction", "purchase", {
       id: new Date().toString().replace(/\D/g, ""),
       affiliation: "store"
     });
-    ga("send", { hitType: "pageview", page: "/" + this.selectedSong().id });
+    ga("send", { hitType: "pageview", page: "/" + this.selectedSong.id });
   }
 
   addSong() {
-    this.editSong({ name: ko.observable(""), lyrics: ko.observable(""), melody: ko.observable(null), author: ko.observable(null), year: ko.observable(null) });
-    this.menuVisible(false);
+    var editSong = { name: "", lyrics: "", melody: null, author: null, year: null };
+    ko.track(editSong);
+    this.editSong = editSong;
+    this.menuVisible = false;
     window.scrollTo(0, 0);
   }
 
   cancelEdit() {
-    this.editSong(null);
+    this.editSong = null;
   }
 
   saveEdit() {
-    var editSong = this.editSong();
+    var editSong = this.editSong;
     var song = {
       id: editSong.id,
-      name: editSong.name(),
-      lyrics: editSong.lyrics(),
-      melody: editSong.melody(),
-      author: editSong.author(),
-      year: editSong.year()
+      name: editSong.name,
+      lyrics: editSong.lyrics,
+      melody: editSong.melody,
+      author: editSong.author,
+      year: editSong.year
     };
 
     if (song.name.replace(/\s/g, "").length === 0) {
@@ -220,7 +216,7 @@ class ViewModel {
     }
 
     var onSuccess = () => {
-      this.editSong(null);
+      this.editSong = null;
       reloadSongs();
     }
 
@@ -232,37 +228,37 @@ class ViewModel {
   }
 
   deleteSong() {
-    if (confirm("Säkert att du vill ta bort '" + this.selectedSong().name + "'?")) {
-      request("DELETE", "/api/songs/" + this.selectedSong().id, null, () => {
-        this.editSong(null);
-        this.selectedSong(null);
+    if (confirm("Säkert att du vill ta bort '" + this.selectedSong.name + "'?")) {
+      request("DELETE", "/api/songs/" + this.selectedSong.id, null, () => {
+        this.editSong = null;
+        this.selectedSong = null;
         reloadSongs();
       });
     }
   }
 
-  password = ko.observable(null);
+  password:string = null;
 
   admin() {
     var password = prompt("Lösenord");
     request("POST", "/test", { password: password }, () => {
-      this.password(password);
+      this.password = password;
       localStorage.setItem("password", password);
     });
   }
 
   publishSong() {
-    if (confirm("Är du säker på att du vill publicera " + this.selectedSong().name + " nu?")) {
-      request("POST", "/api/notifications", { songId: this.selectedSong().id },
-        () => this.menuVisible(false));
+    if (confirm("Är du säker på att du vill publicera " + this.selectedSong.name + " nu?")) {
+      request("POST", "/api/notifications", { songId: this.selectedSong.id },
+        () => this.menuVisible = false);
     }
   }
 
-  notification = ko.observable(null);
+  notification: {song:string; create:number} = null;
 
   selectNotificationSong() {
-    this.songs()[this.notification().song].select();
-    this.notification(null);
+    this.songs[this.notification.song].select();
+    this.notification = null;
   }
 }
 
@@ -307,7 +303,7 @@ function loadSongs() {
     window.onpopstate = () => {
       resolveUrl();
       if (window.history.state) {
-        viewModel.activeSong(window.history.state.active);
+        viewModel.activeSong = window.history.state.active;
         if (window.history.state.scroll !== undefined) {
           window.scroll(0, window.history.state.scroll);
         }
@@ -319,8 +315,8 @@ function loadSongs() {
     var notifications = JSON.parse(data);
     if (notifications && notifications.length > 0) {
       var notification = notifications[0];
-      notification.created = viewModel.time() - notification.age;
-      viewModel.notification(notification);
+      notification.created = viewModel.time - notification.age;
+      viewModel.notification = notification;
     }
   });
 }
@@ -329,7 +325,7 @@ loadSongs();
 
 document.addEventListener("click", event => {
   if (!$(event.target).closest(".navbar").length) {
-    viewModel.menuVisible(false);
+    viewModel.menuVisible = false;
   }
 }, false);
 
@@ -343,16 +339,16 @@ function resolveUrl() {
 
   var search = _.find(query, q => startsWith(q, "q="));
   if (search && search.length > 2) {
-    viewModel.search(search.substring(2));
-    viewModel.selectedSong(null);
+    viewModel.search = search.substring(2);
+    viewModel.selectedSong = null;
   }
-  else if (path.length != null && path in viewModel.songs()) {
-    viewModel.selectedSong(viewModel.songs()[path]);
-    viewModel.search("");
+  else if (path.length != null && path in viewModel.songs) {
+    viewModel.selectedSong = viewModel.songs[path];
+    viewModel.search = "";
     ga("send", { 'hitType': "pageview", 'page': "/" + path });
   } else {
-    viewModel.selectedSong(null);
-    viewModel.search("");
+    viewModel.selectedSong = null;
+    viewModel.search = "";
     ga("send", { 'hitType': "pageview", 'page': "/" + this.id });
   }
 
@@ -373,7 +369,7 @@ window.applicationCache.addEventListener("error", e => {
 
 window.applicationCache.addEventListener("updateready", () => {
   window.applicationCache.swapCache();
-  if (viewModel.editSong() === null) {
+  if (viewModel.editSong === null) {
     window.location.reload();
   } else {
     loadSongs();
@@ -388,8 +384,8 @@ if (window.applicationCache.status === window.applicationCache.UPDATEREADY) {
 $(() => {
 
   $.connection.notificationHub.client.notifyCurrentSong = notification => {
-    notification.created = viewModel.time();
-    viewModel.notification(notification);
+    notification.created = viewModel.time;
+    viewModel.notification = notification;
   }
 
   $.connection.notificationHub.client.drunkMode = enabled => {

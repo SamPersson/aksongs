@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.Http.Description;
@@ -14,6 +12,8 @@ using AKSongs.Filters;
 using AKSongs.Models;
 
 using Microsoft.AspNet.SignalR;
+
+using TypeLite;
 
 namespace AKSongs.Controllers
 {
@@ -32,6 +32,7 @@ namespace AKSongs.Controllers
                 .Select(n => new NotificationDto { Song = n.SongId, Age = (int)(DateTime.Now-n.Created).TotalSeconds });
         }
 
+        [TsClass]
         public class NotificationDto
         {
             public string Song { get; set; }
