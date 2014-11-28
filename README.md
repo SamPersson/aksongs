@@ -1,6 +1,6 @@
 #Alte Kamererens sångbok
 
-The new digital song book for the student orchestra Alte Kamereren (http://www.altekamereren.org).
+The new digital song book for the Swedish student orchestra Alte Kamereren (http://www.altekamereren.org).
 
 It is currently hosted at https://sjung.alte.nu
 
